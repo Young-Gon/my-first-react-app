@@ -1,0 +1,30 @@
+.controls-container {
+  display: flex;
+  gap: 10px;
+}
+
+.input {
+    flex-grow: 1;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    height: 30px;
+  padding: 4px 10px;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.title {
+  margin-bottom: 16px;
+    font-size: 24px;
+    font-weight: bold;
+    text-align: center;
+}
+
+.button,
+.select {
+    border: 1px solid #ccc;
+  padding: 0px 12px;
+  border-radius: 6px;
+  padding: auto0 12px;
+  flex-shrink: 0;
+}

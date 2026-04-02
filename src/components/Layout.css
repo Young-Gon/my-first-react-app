@@ -1,0 +1,13 @@
+.layout {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    align-items: center;
+    justify-content: flex-start;
+    
+    border: 1px solid gray;
+    padding: 32px;
+    border-radius: 6px;
+    width: 60%;
+    margin: auto;
+}
