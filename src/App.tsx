@@ -1,7 +1,9 @@
+import { useEffect } from "react"
 import Controls from "./components/Controls"
 import Layout from "./components/Layout"
 import Title from "./components/Title"
 import TodoList from "./components/TodoList"
+import { useIntent } from "./model/appSlice"
 
 // ─── View ─────────────────────────────────────────────────────────────────────
 // MVI 의 View 레이어입니다.
@@ -9,6 +11,12 @@ import TodoList from "./components/TodoList"
 //  - 사용자 이벤트를 Intent(Action)으로 변환해 dispatch 합니다.
 //  - 비즈니스 로직은 reducer 에 전적으로 위임하여 View 를 순수하게 유지합니다.
 function App() {
+    const intent = useIntent();
+
+    useEffect(() => {
+        intent.fetchTodos();
+    }, []);
+
     return (
         <>
             <Layout>

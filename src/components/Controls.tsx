@@ -2,6 +2,7 @@ import { useRef } from 'react';
 import type { Filter } from '../model/Filter';
 import './Controls.css';
 import { useIntent } from '../model/appSlice';
+import { addTodo } from '../api/fetchTodos';
 
 function Controls() {
     const intent = useIntent();
@@ -12,12 +13,13 @@ function Controls() {
         intent.changeFilter(e.target.value as Filter);
     };
 
-    const onClickAddButton = () => {
+    const onClickAddButton = async () => {
         const value = inputRef.current?.value;
         console.log('추가 버튼이 클릭되었습니다. 입력값:', value);
         if (value !== undefined && value.trim() !== '') {
-            intent.addTodo(value);
-            if (inputRef.current) {
+            // intent.addTodo(value);
+            const result = await intent.addTodoAsync(value);
+            if(addTodo.fulfilled.match(result) && inputRef.current) {
                 inputRef.current.value = ''; // 입력 후 비워주기
             }
         }

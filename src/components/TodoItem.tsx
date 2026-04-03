@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useIntent } from '../model/appSlice';
 import type { Todo } from '../model/Todo';
 import './TodoItem.css';
+import { editTodo } from '../api/fetchTodos';
 
 
 export default function TodoItem({todo}: {todo: Todo}) {
@@ -9,11 +10,15 @@ export default function TodoItem({todo}: {todo: Todo}) {
     const [isEditing, setIsEditing] = useState(false);
     const [editText, setEditText] = useState(todo.text);
 
-    const handleEdit = () => {
+    const handleEdit = async () => {
         if (isEditing) {
-            intent.editTodo(todo.id, editText);
+            const result = await intent.editTodoAsync(todo.id, editText);
+            if(editTodo.fulfilled.match(result)) {
+                setIsEditing(false);
+            }
+            return;
         }
-        setIsEditing(!isEditing);
+        setIsEditing(true);
     };
 
     const handleCancel = () => {
@@ -23,7 +28,7 @@ export default function TodoItem({todo}: {todo: Todo}) {
 
     return (
         <div className="todo-item">
-            <input type="checkbox" className="todo-item-checkbox" checked={todo.completed} onChange={() => intent.toggleTodo(todo.id)} />
+            <input type="checkbox" className="todo-item-checkbox" checked={todo.completed} onChange={() => intent.toggleTodoAsync(todo.id)} />
             {isEditing ? (
                 <input 
                     type="text" 
@@ -42,7 +47,7 @@ export default function TodoItem({todo}: {todo: Todo}) {
             {isEditing ? (
                 <button className="todo-item-button" onClick={handleCancel}>취소</button>
             ) : (
-                <button className="todo-item-button" onClick={() => intent.deleteTodo(todo.id)}>삭제</button>
+                <button className="todo-item-button" onClick={() => intent.deleteTodoAsync(todo.id)}>삭제</button>
             )}
         </div>
     )
