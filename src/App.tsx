@@ -1,21 +1,22 @@
-import { useReducer } from "react"
+import { useSelector } from "react-redux"
 import Controls from "./components/Controls"
 import Layout from "./components/Layout"
 import Title from "./components/Title"
 import TodoList from "./components/TodoList"
 import { Filter } from "./model/Filter"
-import { reducer, initialState, useIntent } from "./model/appReducer"
+import { useIntent } from "./model/appSlice"
+import type { RootState } from "./store/store"
 
 // ─── View ─────────────────────────────────────────────────────────────────────
 // MVI 의 View 레이어입니다.
-//  - Model(State)을 읽어 현재 UI 상태를 렌더링합니다.
+//  - Redux store(Model)을 구독해 현재 UI 상태를 렌더링합니다.
 //  - 사용자 이벤트를 Intent(Action)으로 변환해 dispatch 합니다.
 //  - 비즈니스 로직은 reducer 에 전적으로 위임하여 View 를 순수하게 유지합니다.
 function App() {
-    // useReducer 로 Model 을 구독합니다.
+    // useSelector 로 Redux store(Model)을 구독합니다.
     // state 변경은 dispatch(action) 을 통해서만 이루어집니다.
-    const [state, dispatch] = useReducer(reducer, initialState);
-    const intent = useIntent(dispatch);
+    const state = useSelector((state: RootState) => state.app);
+    const intent = useIntent();
 
     // 현재 필터 조건에 맞는 할일 목록을 계산합니다 (파생 상태).
     // 원본 todos 는 그대로 유지하고, 렌더링용으로만 필터링합니다.
