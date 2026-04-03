@@ -1,21 +1,17 @@
 import { useState } from 'react';
+import { useIntent } from '../model/appSlice';
 import type { Todo } from '../model/Todo';
 import './TodoItem.css';
 
-interface TodoItemProps {
-    todo: Todo;
-    onToggle: (id: number) => void;
-    onEdit: (id: number, newText: string) => void;
-    onDelete: (id: number) => void;
-}
 
-export default function TodoItem({ todo, onToggle, onEdit, onDelete }: TodoItemProps) {
+export default function TodoItem({todo}: {todo: Todo}) {
+    const intent = useIntent();
     const [isEditing, setIsEditing] = useState(false);
     const [editText, setEditText] = useState(todo.text);
 
     const handleEdit = () => {
         if (isEditing) {
-            onEdit(todo.id, editText);
+            intent.editTodo(todo.id, editText);
         }
         setIsEditing(!isEditing);
     };
@@ -27,7 +23,7 @@ export default function TodoItem({ todo, onToggle, onEdit, onDelete }: TodoItemP
 
     return (
         <div className="todo-item">
-            <input type="checkbox" className="todo-item-checkbox" checked={todo.completed} onChange={() => onToggle(todo.id)} />
+            <input type="checkbox" className="todo-item-checkbox" checked={todo.completed} onChange={() => intent.toggleTodo(todo.id)} />
             {isEditing ? (
                 <input 
                     type="text" 
@@ -46,7 +42,7 @@ export default function TodoItem({ todo, onToggle, onEdit, onDelete }: TodoItemP
             {isEditing ? (
                 <button className="todo-item-button" onClick={handleCancel}>취소</button>
             ) : (
-                <button className="todo-item-button" onClick={() => onDelete(todo.id)}>삭제</button>
+                <button className="todo-item-button" onClick={() => intent.deleteTodo(todo.id)}>삭제</button>
             )}
         </div>
     )

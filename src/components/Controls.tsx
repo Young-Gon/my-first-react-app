@@ -1,25 +1,22 @@
 import { useRef } from 'react';
 import type { Filter } from '../model/Filter';
 import './Controls.css';
+import { useIntent } from '../model/appSlice';
 
-interface ControlsProps {
-    addTodo: (text: string) => void;
-    changeFilter: (filter: Filter) => void;
-}
-
-function Controls({ addTodo, changeFilter }: ControlsProps) {
+function Controls() {
+    const intent = useIntent();
     const inputRef = useRef<HTMLInputElement>(null);
 
     const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         console.log(`선택된 필터(${e.target.name}):`, e.target.value);
-        changeFilter(e.target.value as Filter);
+        intent.changeFilter(e.target.value as Filter);
     };
 
     const onClickAddButton = () => {
         const value = inputRef.current?.value;
         console.log('추가 버튼이 클릭되었습니다. 입력값:', value);
         if (value !== undefined && value.trim() !== '') {
-            addTodo(value);
+            intent.addTodo(value);
             if (inputRef.current) {
                 inputRef.current.value = ''; // 입력 후 비워주기
             }
