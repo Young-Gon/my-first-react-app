@@ -1,7 +1,14 @@
 import { useState } from 'react';
 import { useIntent } from '../model/appSlice';
 import type { Todo } from '../model/Todo';
-import './TodoItem.css';
+import {
+    ListItem, Checkbox, Typography, TextField,
+    IconButton, Box, Divider,
+} from '@mui/material';
+import EditRoundedIcon from '@mui/icons-material/EditRounded';
+import DeleteRoundedIcon from '@mui/icons-material/DeleteRounded';
+import CheckRoundedIcon from '@mui/icons-material/CheckRounded';
+import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
 
 export default function TodoItem({ todo }: { todo: Todo }) {
     const intent = useIntent();
@@ -11,7 +18,6 @@ export default function TodoItem({ todo }: { todo: Todo }) {
     const handleEdit = async () => {
         if (isEditing) {
             const result = await intent.editTodo(todo.id, editText);
-            // 이전 코드의 editTodo.fulfilled.match(result) 대신 'data' in result 로 성공 판별합니다.
             if ('data' in result) {
                 setIsEditing(false);
             }
@@ -26,34 +32,63 @@ export default function TodoItem({ todo }: { todo: Todo }) {
     };
 
     return (
-        <div className="todo-item">
-            <input
-                type="checkbox"
-                className="todo-item-checkbox"
-                checked={todo.completed}
-                // id 만 전달합니다. completed 반전은 todosApi 의 queryFn 이 캐시에서 읽어 처리합니다.
-                onChange={() => intent.toggleTodo(todo.id)}
-            />
-            {isEditing ? (
-                <input
-                    type="text"
-                    value={editText}
-                    onChange={(e) => setEditText(e.target.value)}
-                    className="todo-item-text"
+        <>
+            <ListItem disablePadding sx={{ py: 0.5 }}>
+                <Checkbox
+                    checked={todo.completed}
+                    onChange={() => intent.toggleTodo(todo.id)}
+                    sx={{ color: 'primary.light' }}
                 />
-            ) : (
-                <p className={`todo-item-text ${todo.completed ? "completed" : ""}`}>
-                    {todo.text}
-                </p>
-            )}
-            <button className="todo-item-button" onClick={handleEdit}>
-                {isEditing ? '저장' : '수정'}
-            </button>
-            {isEditing ? (
-                <button className="todo-item-button" onClick={handleCancel}>취소</button>
-            ) : (
-                <button className="todo-item-button" onClick={() => intent.deleteTodo(todo.id)}>삭제</button>
-            )}
-        </div>
-    )
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                    {isEditing ? (
+                        <TextField
+                            value={editText}
+                            onChange={(e) => setEditText(e.target.value)}
+                            size="small"
+                            fullWidth
+                            autoFocus
+                            onKeyDown={(e) => { if (e.key === 'Enter') handleEdit(); if (e.key === 'Escape') handleCancel(); }}
+                            sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+                        />
+                    ) : (
+                        <Typography
+                            variant="body1"
+                            sx={{
+                                textDecoration: todo.completed ? 'line-through' : 'none',
+                                color: todo.completed ? 'text.disabled' : 'text.primary',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                                transition: 'color 0.2s',
+                            }}
+                        >
+                            {todo.text}
+                        </Typography>
+                    )}
+                </Box>
+                <Box sx={{ display: 'flex', ml: 1 }}>
+                    {isEditing ? (
+                        <>
+                            <IconButton size="small" color="primary" onClick={handleEdit}>
+                                <CheckRoundedIcon fontSize="small" />
+                            </IconButton>
+                            <IconButton size="small" onClick={handleCancel}>
+                                <CloseRoundedIcon fontSize="small" />
+                            </IconButton>
+                        </>
+                    ) : (
+                        <>
+                            <IconButton size="small" onClick={handleEdit} sx={{ color: 'text.secondary' }}>
+                                <EditRoundedIcon fontSize="small" />
+                            </IconButton>
+                            <IconButton size="small" color="error" onClick={() => intent.deleteTodo(todo.id)}>
+                                <DeleteRoundedIcon fontSize="small" />
+                            </IconButton>
+                        </>
+                    )}
+                </Box>
+            </ListItem>
+            <Divider component="li" sx={{ mx: 1 }} />
+        </>
+    );
 }

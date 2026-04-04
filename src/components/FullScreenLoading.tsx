@@ -1,12 +1,21 @@
-import './FullScreenFallback.css';
+import { Box, CircularProgress, Typography } from '@mui/material';
 
-// Suspense fallback 으로 사용됩니다.
-// TodoList 가 promise 를 throw 하면 React 가 이 컴포넌트를 전체 화면에 표시합니다.
 export default function FullScreenLoading() {
     return (
-        <div className="fullscreen-fallback">
-            <div className="fullscreen-spinner" />
-            <p className="fullscreen-message">불러오는 중...</p>
-        </div>
+        <Box
+            sx={{
+                position: 'fixed',
+                inset: 0,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 2,
+                bgcolor: 'background.default',
+            }}
+        >
+            <CircularProgress size={48} color="primary" />
+            <Typography variant="body2" color="text.secondary">불러오는 중...</Typography>
+        </Box>
     );
 }

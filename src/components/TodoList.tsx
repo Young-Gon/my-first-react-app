@@ -1,16 +1,16 @@
 import { useSelector } from 'react-redux';
 import { useIntent } from '../model/appSlice';
 import TodoItem from './TodoItem';
-import './TodoList.css';
 import type { RootState } from '../store/store';
 import { Filter } from '../model/Filter';
 import { useSuspenseTodosQuery } from '../api/useSuspenseTodosQuery';
+import {
+    Box, Typography, Checkbox, Button, Divider,
+    LinearProgress, Alert, List,
+} from '@mui/material';
+import DeleteSweepRoundedIcon from '@mui/icons-material/DeleteSweepRounded';
 
 export default function TodoList() {
-    // RTK Query 의 Suspense 어댑터 훅입니다.
-    // - 캐시 없음 + 로딩 → promise throw → <Suspense> 발동 (FullScreenLoading)
-    // - 캐시 없음 + 에러 → Error throw  → <ErrorBoundary> 발동 (FullScreenError)
-    // - 캐시 있음       → todos 반환, isFetching/isError 로 인라인 표시
     const { todos, isFetching, isError } = useSuspenseTodosQuery();
     const filter = useSelector((state: RootState) => state.app.filter);
     const intent = useIntent();
@@ -27,33 +27,50 @@ export default function TodoList() {
     });
 
     return (
-        <div className="todo-list">
-            {/* ── 케이스 3: 캐시 있음 + refetch 중 → 리스트 상단 로딩바 ── */}
-            {isFetching && <div className="todo-loading-bar" />}
+        <Box>
+            {isFetching && (
+                <LinearProgress sx={{ borderRadius: 1, mb: 1 }} />
+            )}
+            {isError && (
+                <Alert severity="warning" sx={{ mb: 1, borderRadius: 2 }}>
+                    갱신에 실패했습니다. 잠시 후 다시 시도됩니다.
+                </Alert>
+            )}
 
-            {/* ── 케이스 4: 캐시 있음 + refetch 실패 → 상단 에러 메시지 ── */}
-            {isError && <div className="todo-error-bar">⚠️ 갱신에 실패했습니다. 잠시 후 다시 시도됩니다.</div>}
-
-            <div className="todo-header">
-                <input
-                    type="checkbox"
-                    className="todo-checkbox"
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                <Checkbox
                     checked={isAllCompleted}
                     onChange={(e) => intent.toggleTodoAll(todos, e.target.checked)}
+                    disabled={todos.length === 0}
+                    sx={{ color: 'primary.main' }}
                 />
-                <p className="todo-header-text">할일 ({todos.length})</p>
-                <button
-                    className="todo-header-button"
+                <Typography variant="body2" fontWeight={600} color="text.secondary" sx={{ flex: 1 }}>
+                    할일 ({todos.length})
+                </Typography>
+                <Button
+                    size="small"
+                    color="error"
+                    startIcon={<DeleteSweepRoundedIcon />}
                     onClick={() => intent.deleteCompletedTodos(completedTodos.map(t => t.id))}
+                    disabled={completedTodos.length === 0}
+                    sx={{ textTransform: 'none', borderRadius: 2 }}
                 >
-                    {completedTodos.length > 0 ? `${completedTodos.length}개 ` : ""}삭제
-                </button>
-            </div>
-            <div>
+                    {completedTodos.length > 0 ? `${completedTodos.length}개 ` : ''}삭제
+                </Button>
+            </Box>
+
+            <Divider />
+
+            <List disablePadding>
                 {filteredTodos.map((todo) => (
                     <TodoItem key={todo.id} todo={todo} />
                 ))}
-            </div>
-        </div>
+                {filteredTodos.length === 0 && (
+                    <Box sx={{ py: 4, textAlign: 'center', color: 'text.disabled' }}>
+                        <Typography variant="body2">할 일이 없습니다</Typography>
+                    </Box>
+                )}
+            </List>
+        </Box>
     );
 }
