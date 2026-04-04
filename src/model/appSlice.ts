@@ -61,8 +61,8 @@ export function useIntent() {
         addTodo:                (text: string)                          => addTodo(text),
         deleteTodo:             (id: number)                            => deleteTodo(id),
         editTodo:               (id: number, newText: string)           => editTodo({ id, newText }),
-        // completed 를 호출 측(TodoItem)에서 계산해 전달합니다 (!todo.completed)
-        toggleTodo:             (id: number, completed: boolean)        => toggleTodo({ id, completed }),
+        // id 만 전달합니다. completed 반전은 todosApi 내부에서 캐시를 읽어 처리합니다.
+        toggleTodo:             (id: number)                            => toggleTodo(id),
         // todos 배열과 completedIds 를 호출 측(TodoList)에서 전달합니다.
         // 이전 구현은 thunk 내부에서 getState() 로 읽었으나,
         // RTK Query 에서는 View 가 이미 갖고 있는 데이터를 그대로 넘깁니다.

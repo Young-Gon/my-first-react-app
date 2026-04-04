@@ -31,9 +31,8 @@ export default function TodoItem({ todo }: { todo: Todo }) {
                 type="checkbox"
                 className="todo-item-checkbox"
                 checked={todo.completed}
-                // 이전 thunk 는 내부에서 getState() 로 현재값을 읽었으나,
-                // RTK Query 에서는 이미 갖고 있는 todo.completed 를 반전해 전달합니다.
-                onChange={() => intent.toggleTodo(todo.id, !todo.completed)}
+                // id 만 전달합니다. completed 반전은 todosApi 의 queryFn 이 캐시에서 읽어 처리합니다.
+                onChange={() => intent.toggleTodo(todo.id)}
             />
             {isEditing ? (
                 <input

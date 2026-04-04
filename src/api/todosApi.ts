@@ -49,15 +49,28 @@ export const todosApi = createApi({
             }),
             invalidatesTags: ['Todo'],
         }),
-        // toggleTodo: View(TodoItem) 에서 !todo.completed 를 계산해 전달합니다.
-        // 이전 구현은 thunkAPI.getState() 로 현재값을 읽었으나,
-        // RTK Query 에서는 호출 측에서 새 값을 직접 넘기는 방식을 사용합니다.
-        toggleTodo: builder.mutation<Todo, { id: number; completed: boolean }>({
-            query: ({ id, completed }) => ({
-                url: `/todos/${id}`,
-                method: 'PATCH',
-                body: { completed },
-            }),
+        // toggleTodo: View 로부터 completed 를 받지 않고, 캐시에서 직접 현재 상태를 읽어 반전합니다.
+        // queryFn 을 사용하면 queryApi.getState() 로 Redux store 에 접근할 수 있습니다.
+        // 이렇게 하면 View 가 잘못된 completed 값을 전달하는 실수를 방지할 수 있습니다.
+        toggleTodo: builder.mutation<Todo, number>({
+            queryFn: async (id, queryApi, _extraOptions, baseQuery) => {
+                // todosApi.endpoints.getTodos.select() 는 캐시에서 getTodos 결과를 읽는 selector 입니다.
+                // queryApi.getState() 로 현재 Redux store 전체 상태를 가져옵니다.
+                const { data: todos } = todosApi.endpoints.getTodos.select()(
+                    queryApi.getState() as any
+                );
+                const todo = todos?.find(t => t.id === id);
+                if (!todo) return { error: { status: 'CUSTOM_ERROR' as const, error: `Todo ${id} not found in cache` } };
+
+                const result = await baseQuery({
+                    url: `/todos/${id}`,
+                    method: 'PATCH',
+                    // 캐시에서 읽은 현재 completed 를 반전합니다.
+                    body: { completed: !todo.completed },
+                });
+                if (result.error) return { error: result.error };
+                return { data: result.data as Todo };
+            },
             invalidatesTags: ['Todo'],
         }),
 
