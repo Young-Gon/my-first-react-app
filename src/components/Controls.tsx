@@ -2,35 +2,33 @@ import { useRef } from 'react';
 import type { Filter } from '../model/Filter';
 import './Controls.css';
 import { useIntent } from '../model/appSlice';
-import { addTodo } from '../api/fetchTodos';
 
 function Controls() {
     const intent = useIntent();
     const inputRef = useRef<HTMLInputElement>(null);
 
     const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        console.log(`선택된 필터(${e.target.name}):`, e.target.value);
         intent.changeFilter(e.target.value as Filter);
     };
 
     const onClickAddButton = async () => {
         const value = inputRef.current?.value;
-        console.log('추가 버튼이 클릭되었습니다. 입력값:', value);
         if (value !== undefined && value.trim() !== '') {
-            // intent.addTodo(value);
-            const result = await intent.addTodoAsync(value);
-            if(addTodo.fulfilled.match(result) && inputRef.current) {
-                inputRef.current.value = ''; // 입력 후 비워주기
+            const result = await intent.addTodo(value);
+            // RTK Query mutation 은 { data } 또는 { error } 를 반환합니다.
+            // 이전 코드의 addTodo.fulfilled.match(result) 대신 'data' in result 로 성공 판별합니다.
+            if ('data' in result && inputRef.current) {
+                inputRef.current.value = '';
             }
         }
     }
 
     return (
         <div className="controls-container">
-            <input 
-                type="text" 
-                className="input" 
-                placeholder="What needs to be done?" 
+            <input
+                type="text"
+                className="input"
+                placeholder="What needs to be done?"
                 ref={inputRef}
             />
             <button className="button" onClick={onClickAddButton}>

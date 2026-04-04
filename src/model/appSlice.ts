@@ -2,31 +2,31 @@ import type { PayloadAction } from '@reduxjs/toolkit';
 import { createSlice } from '@reduxjs/toolkit';
 import { useDispatch } from 'react-redux';
 import type { AppDispatch } from '../store/store';
-import { addTodo, deleteTodo, deleteCompletedTodos, editTodo, fetchTodos, toggleTodo, toggleTodoAll } from '../api/fetchTodos';
-export { fetchTodos };
+import {
+    useAddTodoMutation,
+    useDeleteTodoMutation,
+    useEditTodoMutation,
+    useToggleTodoMutation,
+    useToggleTodoAllMutation,
+    useDeleteCompletedTodosMutation,
+} from '../api/todosApi';
 import { Filter } from './Filter';
 import type { Todo } from './Todo';
 
 // ─── Model ────────────────────────────────────────────────────────────────────
-// 앱 전체의 상태를 하나의 불변 객체로 표현합니다.
-// 모든 UI 는 이 State 를 읽어 렌더링되며, State 는 오직 Redux store 를 통해서만 변경됩니다.
+// todos/loading/error 는 RTK Query 캐시가 엔드포인트별로 자동 관리합니다.
+// appSlice 는 서버와 무관한 순수 UI 상태(filter)만 담당합니다.
 export interface AppState {
-    todos: Todo[];
     filter: Filter;
-    loading: boolean;
-    error: string | null;
 }
 
 export const initialState: AppState = {
-    todos: [],
-    loading: false,
-    error: null,
     filter: Filter.ALL,
 };
 
-// ─── Reducer + Intent 정의 ────────────────────────────────────────────────────
-// createSlice 로 Action creator(Intent)와 Reducer 를 함께 정의합니다.
-// RTK 내부에서 Immer 를 사용하므로 불변성을 직접 신경 쓰지 않아도 됩니다.
+// ─── Reducer ──────────────────────────────────────────────────────────────────
+// filter 변경은 서버 요청 없이 동기적으로 처리되므로 일반 reducer 로 남겨둡니다.
+// extraReducers 는 더 이상 필요하지 않습니다 (RTK Query 가 대체합니다).
 const appSlice = createSlice({
     name: 'app',
     initialState,
@@ -35,77 +35,6 @@ const appSlice = createSlice({
             state.filter = action.payload;
         },
     },
-    extraReducers: (builder) => {
-        // 비동기 액션 핸들링 예시 (예: API 호출)
-        builder.addCase(fetchTodos.pending, (state) => {
-            state.loading = true;
-        }).addCase(fetchTodos.fulfilled, (state, action) => {
-            state.loading = false;
-            state.todos = action.payload;
-        }).addCase(fetchTodos.rejected, (state, action) => {
-            state.loading = false;
-            // rejectWithValue를 사용했다면 action.payload에, 
-            // 일반적인 예외라면 action.error.message에 에러 내용이 담깁니다.
-            state.error = /* action.payload || */ action.error.message || 'Failed to fetch todos';
-        }).addCase(addTodo.pending, (state) => {
-            state.loading = true;
-        }).addCase(addTodo.fulfilled, (state, action) => {
-            state.loading = false;
-            state.todos.push(action.payload);
-        }).addCase(addTodo.rejected, (state, action) => {
-            state.loading = false;
-            state.error = action.error.message || 'Failed to add todo';
-        }).addCase(deleteTodo.pending, (state) => {
-            state.loading = true;
-        }).addCase(deleteTodo.fulfilled, (state, action) => {
-            state.loading = false;
-            state.todos = state.todos.filter(t => t.id !== action.payload);
-        }).addCase(deleteTodo.rejected, (state, action) => {
-            state.loading = false;
-            state.error = action.error.message || 'Failed to delete todo';
-        }).addCase(editTodo.pending, (state) => {
-            state.loading = true;
-        }).addCase(editTodo.fulfilled, (state, action) => {
-            state.loading = false;
-            const index = state.todos.findIndex(t => t.id === action.payload.id);
-            if (index !== -1) {
-                state.todos[index] = action.payload;
-            }
-        }).addCase(editTodo.rejected, (state, action) => {
-            state.loading = false;
-            state.error = action.error.message || 'Failed to edit todo';
-        }).addCase(toggleTodo.pending, (state) => {
-            state.loading = true;
-        }).addCase(toggleTodo.fulfilled, (state, action) => {
-            state.loading = false;
-            const index = state.todos.findIndex(t => t.id === action.payload.id);
-            if (index !== -1) {
-                state.todos[index] = action.payload;
-            }
-        }).addCase(toggleTodo.rejected, (state, action) => {
-            state.loading = false;
-            state.error = action.error.message || 'Failed to toggle todo';
-        }).addCase(toggleTodoAll.pending, (state) => {
-            state.loading = true;
-        }).addCase(toggleTodoAll.fulfilled, (state, action) => {
-            state.loading = false;
-            action.payload.forEach(updated => {
-                const index = state.todos.findIndex(t => t.id === updated.id);
-                if (index !== -1) state.todos[index] = updated;
-            });
-        }).addCase(toggleTodoAll.rejected, (state, action) => {
-            state.loading = false;
-            state.error = action.error.message || 'Failed to toggle all todos';
-        }).addCase(deleteCompletedTodos.pending, (state) => {
-            state.loading = true;
-        }).addCase(deleteCompletedTodos.fulfilled, (state, action) => {
-            state.loading = false;
-            state.todos = state.todos.filter(t => !action.payload.includes(t.id));
-        }).addCase(deleteCompletedTodos.rejected, (state, action) => {
-            state.loading = false;
-            state.error = action.error.message || 'Failed to delete completed todos';
-        })
-    }
 });
 
 export const appActions = appSlice.actions;
@@ -113,17 +42,31 @@ export default appSlice.reducer;
 
 // ─── Intent ───────────────────────────────────────────────────────────────────
 // DOM 이벤트를 Action 으로 변환하는 Intent 훅입니다.
-// View 에서 발생한 이벤트는 이 훅을 통해 Redux store 로 dispatch 됩니다.
+// - 동기 액션(changeFilter): dispatch 로 처리
+// - 비동기 CRUD: RTK Query mutation trigger 를 래핑
+//   View 는 내부가 dispatch 인지 mutation 인지 알 필요 없이 intent.xxx() 만 호출합니다.
 export function useIntent() {
     const dispatch = useDispatch<AppDispatch>();
+    // useXxxMutation() 은 [trigger, result] 튜플을 반환합니다.
+    // trigger 만 필요하므로 구조 분해로 첫 번째 요소만 가져옵니다.
+    const [addTodo]                 = useAddTodoMutation();
+    const [deleteTodo]              = useDeleteTodoMutation();
+    const [editTodo]                = useEditTodoMutation();
+    const [toggleTodo]              = useToggleTodoMutation();
+    const [toggleTodoAll]           = useToggleTodoAllMutation();
+    const [deleteCompletedTodos]    = useDeleteCompletedTodosMutation();
+
     return {
-        toggleTodoAll:      (completed: boolean)            => dispatch(toggleTodoAll(completed)),
-        deleteTodoCompleted:()                              => dispatch(deleteCompletedTodos()),
-        changeFilter:       (filter: Filter)                => dispatch(appActions.changeFilter(filter)),
-        fetchTodos:         ()                              => dispatch(fetchTodos()),
-        addTodoAsync:       (text: string)                  => dispatch(addTodo(text)),
-        deleteTodoAsync:    (id: number)                    => dispatch(deleteTodo(id)),
-        editTodoAsync:      (id: number, newText: string)   => dispatch(editTodo({ id, newText })),
-        toggleTodoAsync:    (id: number)                    => dispatch(toggleTodo(id)),
+        changeFilter:           (filter: Filter)                        => dispatch(appActions.changeFilter(filter)),
+        addTodo:                (text: string)                          => addTodo(text),
+        deleteTodo:             (id: number)                            => deleteTodo(id),
+        editTodo:               (id: number, newText: string)           => editTodo({ id, newText }),
+        // completed 를 호출 측(TodoItem)에서 계산해 전달합니다 (!todo.completed)
+        toggleTodo:             (id: number, completed: boolean)        => toggleTodo({ id, completed }),
+        // todos 배열과 completedIds 를 호출 측(TodoList)에서 전달합니다.
+        // 이전 구현은 thunk 내부에서 getState() 로 읽었으나,
+        // RTK Query 에서는 View 가 이미 갖고 있는 데이터를 그대로 넘깁니다.
+        toggleTodoAll:          (todos: Todo[], completed: boolean)     => toggleTodoAll({ todos, completed }),
+        deleteCompletedTodos:   (completedIds: number[])                => deleteCompletedTodos(completedIds),
     };
 }
