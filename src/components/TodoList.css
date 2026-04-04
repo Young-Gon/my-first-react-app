@@ -32,3 +32,28 @@
     width: 16px;
     height: 16px;
 }
+
+/* ── 캐시 있음 + refetch 중: 리스트 상단 로딩바 ────── */
+.todo-loading-bar {
+    height: 3px;
+    background: linear-gradient(90deg, transparent, #555, transparent);
+    background-size: 200% 100%;
+    animation: loading-slide 1.2s linear infinite;
+}
+
+@keyframes loading-slide {
+    from { background-position: 200% 0; }
+    to   { background-position: -200% 0; }
+}
+
+/* ── 캐시 있음 + refetch 실패: 리스트 상단 에러 메시지 ─ */
+.todo-error-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    background: #fff3f3;
+    color: #c0392b;
+    font-size: 13px;
+    border-bottom: 1px solid #f5c6cb;
+}
